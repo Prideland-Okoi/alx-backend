@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""
-Deletion-resilient hypermedia pagination
-"""
+"""Hypermedia pagination"""
 
 import csv
 import math
-from typing import List
+from typing import Dict, List
+index_range = __import__('0-simple_helper_function').index_range
 
 
 class Server:
@@ -15,7 +14,6 @@ class Server:
 
     def __init__(self):
         self.__dataset = None
-        self.__indexed_dataset = None
 
     def dataset(self) -> List[List]:
         """Cached dataset
@@ -28,16 +26,40 @@ class Server:
 
         return self.__dataset
 
-    def indexed_dataset(self) -> Dict[int, List]:
-        """Dataset indexed by sorting position, starting at 0
-        """
-        if self.__indexed_dataset is None:
-            dataset = self.dataset()
-            truncated_dataset = dataset[:1000]
-            self.__indexed_dataset = {
-                i: dataset[i] for i in range(len(dataset))
-            }
-        return self.__indexed_dataset
+    def get_page(self, page: int = 1, page_size: int = 10) -> List[List]:
+        """Gets page list of records
 
-    def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
-        pass
+        Args:
+            page (int, optional): Number of page. Defaults to 1.
+            page_size (int, optional):
+            Size of elements in page. Defaults to 10.
+
+        Returns:
+            List[List]: List of elements in a page
+        """
+        assert(type(page_size) == int and type(page) == int)
+        assert(page > 0 and page_size > 0)
+        beginning, end = index_range(page, page_size)
+        return self.dataset()[beginning:end]
+
+    def get_hyper(self, page: int = 1, page_size: int = 10) -> Dict:
+        """get hyper
+
+        Args:
+            page (int, optional): current page. Defaults to 1.
+            page_size (int, optional):
+            Number of elements in page. Defaults to 10.
+
+        Returns:
+            Dict: Dictonary of pagination elements
+        """
+        total_pages = math.ceil(len(self.dataset()) / page_size)
+        new_dictionary = {
+            "page_size": page_size,
+            "page": page,
+            "data": self.get_page(page, page_size),
+            "next_page": page + 1 if page < total_pages else None,
+            "prev_page": page - 1 if page > 1 else None,
+            "total_pages": total_pages
+        }
+        return new_dictionary
