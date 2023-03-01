@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-""" 3-app module """
-from typing import Union
-from flask import Flask, request
+""" Route module for the API """
+from flask import Flask, render_template
 from flask_babel import Babel
-from routes.routes_3 import app_routes
-from config import Config
-
 
 app = Flask(__name__)
 babel = Babel(app)
 
-app.config.from_object(Config)
-app.register_blueprint(app_routes)
+
+class Config(object):
+    """ Available languages class """
+    LANGUAGES = ['en', 'fr']
+    # these are the inherent defaults just btw
+    BABEL_DEFAULT_LOCALE = 'en'
+    BABEL_DEFAULT_TIMEZONE = 'UTC'
+
+
+# set the above class object as the configuration for the app
+app.config.from_object('1-app.Config')
+
+
+@app.route('/', methods=['GET'], strict_slashes=False)
+def index() -> str:
+    """ GET /
+    Return:
+      - 1-index.html
+    """
+    return render_template('1-index.html')
 
 
 @babel.localeselector
-def get_locale() -> Union[str, None]:
-    """ get locale
-    """
-    return request.accept_languages.best_match(Config.LANGUAGES)
+def get_locale() -> str:
+    """ Determines best match for supported languages """
+    return request.accept_languages.best_match(app.config['LANGUAGES'])
 
 
 if __name__ == "__main__":
